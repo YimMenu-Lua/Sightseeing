@@ -28,6 +28,7 @@ local selected_ufo        = 0
 local remove_cooldown     = false
 local halloween_weather   = false
 local always_spawn_inside = false
+local props_loaded        = false
 
 local ssp2_day       = 0
 local ssp2_ufo_count = 0
@@ -71,7 +72,7 @@ local function is_time_valid()
 	local hour   = CLOCK.GET_CLOCK_HOURS()
 	local minute = CLOCK.GET_CLOCK_MINUTES()
 	
-	if tunables.get_bool("SSP2WEATHER") then
+	if halloween_weather then
 		return (((hour >= 19 or hour <= 6) and not (hour == 19 and minute < 30)) and not (hour == 6 and minute > 30))
 	else
 		return (hour >= 22 or hour <= 3)
@@ -86,11 +87,39 @@ local function get_current_day()
 	end
 end
 
+function load_entity_sets()
+	local interior_id = INTERIOR.GET_INTERIOR_AT_COORDS(-1876.0, 3750.0, -100.0)
+	INTERIOR.ACTIVATE_INTERIOR_ENTITY_SET(interior_id, "entity_set_crates")
+	INTERIOR.ACTIVATE_INTERIOR_ENTITY_SET(interior_id, "entity_set_levers")
+	INTERIOR.ACTIVATE_INTERIOR_ENTITY_SET(interior_id, "entity_set_lift_lights")
+	INTERIOR.ACTIVATE_INTERIOR_ENTITY_SET(interior_id, "entity_set_weapons")
+	INTERIOR.REFRESH_INTERIOR(interior_id)
+end
+
+function unload_entity_sets()
+	local interior_id = INTERIOR.GET_INTERIOR_AT_COORDS(-1876.0, 3750.0, -100.0)
+	INTERIOR.DEACTIVATE_INTERIOR_ENTITY_SET(interior_id, "entity_set_crates")
+	INTERIOR.DEACTIVATE_INTERIOR_ENTITY_SET(interior_id, "entity_set_levers")
+	INTERIOR.DEACTIVATE_INTERIOR_ENTITY_SET(interior_id, "entity_set_lift_lights")
+	INTERIOR.DEACTIVATE_INTERIOR_ENTITY_SET(interior_id, "entity_set_weapons")
+	INTERIOR.REFRESH_INTERIOR(interior_id)
+end
+
+event.register_handler(menu_event.ScriptsReloaded, function()
+	local value = tunables.get_int("SSP2_COOLDOWN")
+	locals.set_int("freemode", 15544 + (1 + (6 * 12)) + 6, value)
+end)
+
+event.register_handler(menu_event.MenuUnloaded, function()
+	local value = tunables.get_int("SSP2_COOLDOWN")
+	locals.set_int("freemode", 15544 + (1 + (6 * 12)) + 6, value)
+end)
+
 script.register_looped("Sightseeing", function()
-	ssp2_day       = get_current_day()
-	ssp2_ufo_count = globals.get_int(1962287)
-	ssp2_posix     = tunables.get_int("SSP2POSIX")
-	ssp2_ufo_table = create_ufo_combo(ssp2_ufo_count)
+	ssp2_day          = get_current_day()
+	ssp2_ufo_count    = globals.get_int(1962287)
+	ssp2_posix        = tunables.get_int("SSP2POSIX")
+	ssp2_ufo_table    = create_ufo_combo(ssp2_ufo_count)
 	
 	if remove_cooldown then
 		locals.set_int("freemode", 15544 + (1 + (6 * 12)) + 6, 1000)
@@ -99,6 +128,7 @@ script.register_looped("Sightseeing", function()
 	if halloween_weather then
 		tunables.set_bool("SSP2WEATHER", true)
 	end
+	halloween_weather = tunables.get_bool("SSP2WEATHER")	
 	
 	if always_spawn_inside then
 		tunables.set_int(878931106, 100)
@@ -130,7 +160,7 @@ sightseeing_tab:add_imgui(function()
 					tunables.set_int("SSP2POSIX", value)
 					selected_ufo = 0
 				else
-					if tunables.get_bool("SSP2WEATHER") then
+					if halloween_weather then
 						gui.show_error("Sightseeing", "Invalid time. It must be between 19:30pm and 6:30am.")
 					else
 						gui.show_error("Sightseeing", "Invalid time. It must be between 22:00pm and 3:00am.")
@@ -158,6 +188,20 @@ sightseeing_tab:add_imgui(function()
 	if ImGui.Button("TP to Fort Zancudo Bunker") then
 		script.run_in_fiber(function()
 			PED.SET_PED_COORDS_KEEP_VEHICLE(self.get_ped(), -1876.0, 3750.0, -100.0)
+		end)
+	end
+	
+	ImGui.SameLine()
+	
+	if ImGui.Button((props_loaded and "Unload" or "Load") .. " Interior Props") then
+		script.run_in_fiber(function()
+			if props_loaded then
+				unload_entity_sets()
+				props_loaded = false
+			else
+				load_entity_sets()
+				props_loaded = true
+			end
 		end)
 	end
 	
