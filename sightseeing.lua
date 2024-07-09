@@ -36,6 +36,7 @@ local ssp2_posix               = 0
 local photographed_ufos        = 0
 local times_abducted           = 0
 local times_spawned_in_room    = 0
+local bunker_time              = "N/A"
 local bunker_lever_order       = "N/A"
 local zancudo_ufo_photographed = false
 local ssp2_ufo_table           = {}
@@ -123,11 +124,28 @@ local function get_bunker_lever_order()
     end
 end
 
+local function get_bunker_time()
+    if SCRIPT.GET_NUMBER_OF_THREADS_RUNNING_THE_SCRIPT_WITH_THIS_HASH(joaat("fm_content_ufo_abduction")) == 0 then
+        return "N/A"
+    else
+        local time_passed   = MISC.ABSI(NETWORK.GET_TIME_DIFFERENCE(NETWORK.GET_NETWORK_TIME(), locals.get_int("fm_content_ufo_abduction", 2858 + 374)))
+        local diff          = NETWORK.GET_TIME_DIFFERENCE(tunables.get_int(-348918520), time_passed)
+        local total_seconds = math.floor(diff / 1000)
+        local hours         = math.floor(total_seconds / 3600)
+        local minutes       = math.floor((total_seconds % 3600) / 60)
+        local seconds       = total_seconds % 60
+        local formatted     = string.format("%02d:%02d", minutes, seconds)
+        
+        return formatted
+    end
+end
+
 script.register_looped("Sightseeing", function()
     ssp2_day                 = get_current_day()
     photographed_ufos        = get_photographed_ufo_count()
     ssp2_ufo_table           = create_ufo_combo(ssp2_ufo_count)
     bunker_lever_order       = get_bunker_lever_order()
+    bunker_time              = get_bunker_time()
     ssp2_ufo_count           = globals.get_int(1963189)
     ssp2_posix               = tunables.get_int("SSP2POSIX")
     zancudo_ufo_photographed = (stats.get_int("MPX_SSP2_PROGRESS") & (1 << 31)) ~= 0
@@ -205,6 +223,7 @@ sightseeing_tab:add_imgui(function()
     ImGui.Text("Times Abducted: " .. times_abducted)
     ImGui.Text("Times Spawned Inside: " .. times_spawned_in_room)
     ImGui.Text("Lever Order: " .. bunker_lever_order)
+    ImGui.Text("Time Left: " .. bunker_time)
 
     ImGui.Separator()
 
