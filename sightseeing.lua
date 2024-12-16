@@ -67,8 +67,8 @@ local function get_epoch_x_days_ago(x)
 end
 
 local function has_cooldown_expired()
-    local timer    = globals.get_int(1882247 + 1 + (1 + (6 * 15)) + 1)
-    local cooldown = locals.get_int("freemode", 15727 + (1 + (6 * 12)) + 6)
+    local timer    = globals.get_int(1882379 + 1 + (1 + (6 * 15)) + 1)
+    local cooldown = locals.get_int("freemode", 15827 + (1 + (6 * 12)) + 6)
     
     return MISC.ABSI(NETWORK.GET_TIME_DIFFERENCE(NETWORK.GET_NETWORK_TIME(), timer)) >= cooldown
 end
@@ -86,10 +86,10 @@ local function is_time_valid()
 end
 
 local function get_current_day()
-    if SCRIPT.GET_NUMBER_OF_THREADS_RUNNING_THE_SCRIPT_WITH_THIS_HASH(joaat("fm_content_sightseeing")) == 0 then
+    if not script.is_active("fm_content_sightseeing") then
     	return -1
     else
-    	return locals.get_int("fm_content_sightseeing", 3347)
+    	return locals.get_int("fm_content_sightseeing", 3401)
     end
 end
 
@@ -108,12 +108,12 @@ local function get_photographed_ufo_count()
 end
 
 local function get_bunker_lever_order()
-    if SCRIPT.GET_NUMBER_OF_THREADS_RUNNING_THE_SCRIPT_WITH_THIS_HASH(joaat("fm_content_ufo_abduction")) == 0 then
+    if not script.is_active("fm_content_ufo_abduction") then
         return "N/A"
     else
         local str = ""
         for i = 1, 4 do
-            local index = locals.get_int("fm_content_ufo_abduction", 2858 + 392 + 2 + i) + 1
+            local index = locals.get_int("fm_content_ufo_abduction", 2934 + 393 + 2 + i) + 1
             if i > 1 then
                 str = str .. " - "
             end
@@ -125,10 +125,10 @@ local function get_bunker_lever_order()
 end
 
 local function get_bunker_time()
-    if SCRIPT.GET_NUMBER_OF_THREADS_RUNNING_THE_SCRIPT_WITH_THIS_HASH(joaat("fm_content_ufo_abduction")) == 0 then
+    if not script.is_active("fm_content_ufo_abduction") then
         return "N/A"
     else
-        local time_passed   = MISC.ABSI(NETWORK.GET_TIME_DIFFERENCE(NETWORK.GET_NETWORK_TIME(), locals.get_int("fm_content_ufo_abduction", 2858 + 374)))
+        local time_passed   = MISC.ABSI(NETWORK.GET_TIME_DIFFERENCE(NETWORK.GET_NETWORK_TIME(), locals.get_int("fm_content_ufo_abduction", 2934 + 375)))
         local diff          = NETWORK.GET_TIME_DIFFERENCE(tunables.get_int(-348918520), time_passed)
         local total_seconds = math.floor(diff / 1000)
         local hours         = math.floor(total_seconds / 3600)
@@ -146,14 +146,14 @@ script.register_looped("Sightseeing", function()
     ssp2_ufo_table           = create_ufo_combo(ssp2_ufo_count)
     bunker_lever_order       = get_bunker_lever_order()
     bunker_time              = get_bunker_time()
-    ssp2_ufo_count           = globals.get_int(1963189)
+    ssp2_ufo_count           = globals.get_int(1963949)
     ssp2_posix               = tunables.get_int("SSP2POSIX")
     zancudo_ufo_photographed = (stats.get_int("MPX_SSP2_PROGRESS") & (1 << 31)) ~= 0
     times_abducted           = stats.get_int("MPX_SSP2_LIGHT")
     times_spawned_in_room    = stats.get_int("MPX_SSP2_ROOM")
     
     if remove_cooldown then
-    	locals.set_int("freemode", 15727 + (1 + (6 * 12)) + 6, 1000)
+    	locals.set_int("freemode", 15827 + (1 + (6 * 12)) + 6, 1000)
     end
     
     if halloween_weather then
@@ -162,10 +162,10 @@ script.register_looped("Sightseeing", function()
     
     if always_spawn_inside then
         tunables.set_int("SSP2TP", 100)
-        globals.set_int(1887305 + (1 + (self.get_id() * 610)) + 10, -1) -- Sign player out of CEO/MC
+        globals.set_int(1887549 + (1 + (self.get_id() * 611)) + 10, -1) -- Sign player out of CEO/MC
         
-        local value = locals.get_int("fm_content_sightseeing", 1783 + 1) & ~(1 << 14)
-        locals.set_int("fm_content_sightseeing", 1783 + 1, value)
+        local value = locals.get_int("fm_content_sightseeing", 1834 + 1) & ~(1 << 14)
+        locals.set_int("fm_content_sightseeing", 1834 + 1, value)
     end
 end)
 
@@ -182,7 +182,7 @@ sightseeing_tab:add_imgui(function()
                         if NETWORK.NETWORK_GET_HOST_OF_SCRIPT("fm_content_sightseeing", 6, 0) ~= self.get_id() then
                             network.force_script_host("fm_content_sightseeing")
                         end
-                        locals.set_int("fm_content_sightseeing", 1822 + 84, 3)
+                        locals.set_int("fm_content_sightseeing", 1875 + 84, 3)
                         script:yield()
                     end
                     local value = get_epoch_x_days_ago(selected_day)
@@ -205,7 +205,7 @@ sightseeing_tab:add_imgui(function()
 
     if ImGui.Button("Teleport to Selected") then
         script.run_in_fiber(function()
-            local coords = locals.get_vec3("fm_content_sightseeing", 3367 + (1 + (selected_ufo * 3)))
+            local coords = locals.get_vec3("fm_content_sightseeing", 3421 + (1 + (selected_ufo * 3)))
             if coords ~= vec3:new(0.0, 0.0, 0.0) then
                 PED.SET_PED_COORDS_KEEP_VEHICLE(self.get_ped(), coords.x, coords.y, coords.z)
             else
@@ -231,7 +231,7 @@ sightseeing_tab:add_imgui(function()
     if on_tick then
         if not remove_cooldown then
             local value = tunables.get_int("SSP2_COOLDOWN")
-            locals.set_int("freemode", 15727 + (1 + (6 * 12)) + 6, value)
+            locals.set_int("freemode", 15827 + (1 + (6 * 12)) + 6, value)
         end
     end
 
